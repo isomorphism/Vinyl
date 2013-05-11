@@ -19,6 +19,7 @@ module Data.Vinyl.Rec
   , PlainRec
   , (=:)
   , (<+>)
+  , (++)(..)
   , fixRecord
   ) where
 

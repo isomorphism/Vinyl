@@ -17,8 +17,10 @@ module Data.Vinyl.Relation
   , rIso
   ) where
 
+import           Data.Vinyl.Case
 import           Data.Vinyl.Field
 import           Data.Vinyl.Lens
+import           Data.Vinyl.Opt
 import           Data.Vinyl.Rec
 import           Data.Vinyl.Witnesses
 import           Control.Monad.Identity
@@ -33,6 +35,7 @@ class (IsSubtype r1 r2) => r1 <: r2 where
 -- subset of the fields of the former.
 type family IsSubtype r1 r2 :: Constraint
 type instance IsSubtype (Rec ss f) (Rec ts f) = ISubset ts ss
+type instance IsSubtype (CaseOf cs1 a) (CaseOf cs2 a) = (ISubset cs1 cs2)
 
 -- | If two records types are subtypes of each other, that means that they
 -- differ only in order of fields.
@@ -48,6 +51,14 @@ instance Rec xs f <: Rec '[] f where
 instance (y ~ (sy ::: t), IElem y xs, PlainRec xs <: PlainRec ys) => PlainRec xs <: PlainRec (y ': ys) where
   cast r = Identity (rGet field r) :& cast r
     where field = lookupField (implicitly :: Elem y xs) r
+
+instance CaseOf '[] (sy |:: t) <: CaseOf (c ': cs) (sy |:: t) where
+  cast (CaseOf c) = CaseOf c
+
+instance ( c ~ (sy1 |:: t1), a ~ (sy2 |:: t2)
+         , IElem c cs2, CaseOf cs1 a <: CaseOf cs2 a
+         ) => CaseOf (c ': cs1) a <: CaseOf cs2 a where
+  cast (CaseOf c) = CaseOf c
 
 lookupField :: Elem x xs -> Rec xs f -> x
 lookupField Here      (_ :& _)  = Field
